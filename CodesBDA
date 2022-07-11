@@ -1,0 +1,536 @@
+
+
+[1.hadoop dfs -put /pathofthedataset /filehd]  
+[2.hadoop jar jarfilepath mainclassname /filehd /fileout]
+///output
+hadoop dfs -ls /fileout
+hadoop dfs -cat /fileout/part-00000
+/////////////////
+WORDCOUNT                                                                              
+  import org.apache.hadoop.conf.Configured;
+  import org.apache.hadoop.fs.Path;
+  import org.apache.hadoop.io.IntWritable;
+  import org.apache.hadoop.io.Text;
+  import org.apache.hadoop.mapred.FileInputFormat;
+  import org.apache.hadoop.mapred.FileOutputFormat;
+  import org.apache.hadoop.mapred.JobClient;
+  import org.apache.hadoop.mapred.JobConf;
+  import org.apache.hadoop.util.Tool;
+  import org.apache.hadoop.util.ToolRunner;
+
+  public class wordcount extends Configured implements Tool {
+
+    @Override
+    public int run(String[] args) throws Exception {
+
+    if(args.length<2)
+    {
+      System.out.println("Plz Give Input Output Directory Correctly");
+      return -1;
+    }
+    JobConf conf = new JobConf(wordcount.class);
+    FileInputFormat.setInputPaths(conf,new Path(args[0]));
+    FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+    conf.setMapperClass(wordmapper.class);
+    conf.setReducerClass(wordreducer.class);
+    conf.setMapOutputKeyClass(Text.class);
+    conf.setMapOutputValueClass(IntWritable.class);
+    conf.setOutputKeyClass(Text.class);
+    conf.setOutputValueClass(IntWritable.class);
+    JobClient.runJob(conf);
+    return 0;
+    }
+    public static void main(String args[]) throws Exception
+    {	int exitcode = ToolRunner.run(new wordcount(), args);
+      System.exit(exitcode);
+    }
+
+  }
+////////////////////////////////////    f  
+WORDMAPPER
+
+import java.io.IOException;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
+public class wordmapper import java.io.IOException;
+public void map(LongWritable key, Text value,
+	OutputCollector<Text, IntWritable> output, Reporter r)
+		throws IOException {
+		String s =value.toString();
+		for(String word:s.split(" "))
+		{
+		if(word.length()>0)
+			{
+		output.collect(new Text(word), new IntWritable(1));
+		}
+		}
+		
+	}
+
+}
+//////////////////////////////////////////
+WORDREDUCER
+
+import java.io.IOException;
+import java.util.Iterator;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reducer;
+import org.apache.hadoop.mapred.Reporter;
+
+
+public class wordreducer extends MapReduceBase implements Reducer<Text,IntWritable,Text,IntWritable>
+{
+	public void reduce(Text key, Iterator<IntWritable> values,
+			OutputCollector<Text, IntWritable> output, Reporter r)
+			throws IOException {
+		
+	int count=0;
+	while(values.hasNext())
+	{
+		IntWritable i= values.next();
+		count+= i.get();
+	}
+	output.collect(key, new IntWritable(count));
+	}
+}
+///////////////////////////////////////////
+LOG REDUCER
+
+import java.io.IOException;
+import java.util.Iterator;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reducer;
+import org.apache.hadoop.mapred.Reporter;
+
+
+public class LogReducer extends MapReduceBase implements Reducer<Text,IntWritable,Text,IntWritable>
+{
+
+	
+	public void reduce(Text key, Iterator<IntWritable> values,
+			OutputCollector<Text, IntWritable> output, Reporter r)
+			throws IOException {
+		
+	int count=0;
+	while(values.hasNext())
+	{
+		IntWritable i= values.next();
+		count+= i.get();
+	}
+	output.collect(key, new IntWritable(count));
+		
+	}
+
+}
+//////////////////////////////////////
+LOG MAPPER
+
+import java.io.IOException;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
+
+
+public class LogMapper extends MapReduceBase implements Mapper<LongWritable,Text,Text,IntWritable>
+{
+	public void map(LongWritable key, Text value,
+			OutputCollector<Text, IntWritable> output, Reporter r)
+			throws IOException {
+		
+		String[] s = value.toString().split(" ");
+		String ip = s[0];
+		
+		output.collect(new Text(ip), new IntWritable(1));
+	}
+
+}
+/////////////////////////////////////
+LOG MAIN
+
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+
+public class logmain extends Configured implements Tool{
+
+	public int run(String[] args) throws Exception {
+		// TODO Auto-generated method stub
+		if(args.length<2)
+		{
+			System.out.println("Please Give Input Output Correctly");
+			return -1;
+		}
+		JobConf conf = new JobConf(logmain.class);
+		
+		FileInputFormat.setInputPaths(conf, new Path(args[0]));
+		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+		
+		conf.setMapperClass(logmapper.class);
+		conf.setReducerClass(logreducer.class);
+		
+		conf.setMapOutputKeyClass(Text.class);
+		conf.setMapOutputValueClass(IntWritable.class);
+		conf.setOutputKeyClass(Text.class);
+		conf.setOutputValueClass(IntWritable.class);
+		
+		JobClient.runJob(conf);
+		return 0;
+		
+	}
+	public static void main(String args[]) throws Exception
+	{
+		int exitcode = ToolRunner.run(new logmain(), args);
+		System.exit(exitcode);
+	}
+
+}
+////////////////////////////////////////////
+CLIENT WORD COUNT
+
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+
+public class clientwordcount extends Configured implements Tool{
+
+	public int run(String[] args) throws Exception {
+		// TODO Auto-generated method stub
+		if(args.length<2)
+		{
+			System.out.println("Please Give Input Output Correctly");
+			return -1;
+		}
+		JobConf conf = new JobConf(clientwordcount.class);
+		
+		FileInputFormat.setInputPaths(conf, new Path(args[0]));
+		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+		
+		conf.setMapperClass(clientmapper.class);
+		conf.setReducerClass(clientreducer.class);
+		conf.setMapOutputKeyClass(Text.class);
+		conf.setMapOutputValueClass(IntWritable.class);
+		conf.setOutputKeyClass(Text.class);
+		conf.setOutputValueClass(IntWritable.class);
+		
+		JobClient.runJob(conf);
+		return 0;
+		
+	}
+	public static void main(String args[]) throws Exception
+	{
+		int exitcode = ToolRunner.run(new clientwordcount(), args);
+		System.exit(exitcode);
+	}
+
+}
+////////////////////////
+CLIENT REDUCER
+
+import java.io.IOException;
+import java.util.Iterator;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reducer;
+import org.apache.hadoop.mapred.Reporter;
+
+
+public class clientreducer extends MapReduceBase implements Reducer<Text, IntWritable, Text, IntWritable> {
+
+	public void reduce(Text key, Iterator<IntWritable> values,
+			OutputCollector<Text, IntWritable> output, Reporter arg3)
+			throws IOException {
+		// TODO Auto-generated method stub
+		
+		int count =0;
+		
+		while(values.hasNext())
+		{
+			IntWritable i = values.next();
+			count+=i.get(); 
+		}
+		output.collect(key, new IntWritable(count));
+	}
+
+}
+/////////////////////////
+CLIENT MAPPER
+
+import java.io.IOException;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
+
+public class clientmapper extends MapReduceBase implements Mapper<LongWritable, Text,Text, IntWritable>{
+
+	@Override
+	public void map(LongWritable key, Text value,
+			OutputCollector<Text, IntWritable> output, Reporter arg3)
+			throws IOException {
+		// TODO Auto-generated method stub
+		String s = value.toString();
+		String a = "the";
+		String b = "and";
+		for(String word: s.split(" "))
+		{
+			if(word.length()>0 && word.equals(a) || word.equals(b))
+			{
+				output.collect(new Text(word), new IntWritable(1));
+			}
+			
+		}
+		
+	}
+
+}
+////////////////////////////////////
+STOCK MAIN
+MaxClosePrice
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+
+public class MaxClosePrice extends Configured implements Tool {
+	
+	public int run(String[] args) throws Exception {
+		if(args.length<2)
+		{
+			System.out.println("Plz Give Input Output Directory Correctly");
+			return -1;
+		}
+		JobConf conf = new JobConf(MaxClosePrice.class);
+		FileInputFormat.setInputPaths(conf,new Path(args[0]));
+		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+		conf.setMapperClass(MaxClosePriceMapper.class);
+		conf.setReducerClass(MaxClosePriceReducer.class);
+		conf.setMapOutputKeyClass(Text.class);
+		conf.setMapOutputValueClass(FloatWritable.class);
+		conf.setOutputKeyClass(Text.class);
+		conf.setOutputValueClass(FloatWritable.class);
+		JobClient.runJob(conf);
+		return 0;
+		}
+	
+	public static void main(String[] args) throws Exception {
+		int exitcode = ToolRunner.run(new MaxClosePrice(), args);
+		System.exit(exitcode);
+		}
+}
+//////////////////////////
+STOCK MAPPER
+/**
+ * MaxClosePriceMapper.java
+ */
+
+import java.io.IOException;
+
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.Mapper;
+
+public class MaxClosePriceMapper extends MapReduceBase implements Mapper<LongWritable, Text, Text, FloatWritable>
+{
+
+	@Override
+	public void map(LongWritable key, Text value, 
+			OutputCollector<Text, FloatWritable> output, Reporter r)
+					throws IOException {
+
+		String line = value.toString();
+		String[] items = line.split(",");
+		
+		String stock = items[1];
+		Float closePrice = Float.parseFloat(items[6]);
+		
+		output.collect(new Text(stock), new FloatWritable(closePrice));
+		
+	}
+}
+//////////////////
+STOCK REDUCER
+/**
+ * MaxClosePriceReducer.java
+ */
+ import java.io.IOException;
+ import java.util.Iterator;
+ 
+ import org.apache.hadoop.io.FloatWritable;
+ import org.apache.hadoop.io.Text;
+ import org.apache.hadoop.mapred.MapReduceBase;
+ import org.apache.hadoop.mapred.OutputCollector;
+ import org.apache.hadoop.mapred.Reducer;
+ import org.apache.hadoop.mapred.Reporter;
+
+ public class MaxClosePriceReducer extends MapReduceBase implements Reducer<Text,FloatWritable,Text,FloatWritable>
+ {
+
+	 @Override
+	 public void reduce(Text key, Iterator<FloatWritable> values, 
+			 OutputCollector<Text, FloatWritable> output, Reporter r)
+			 throws IOException {
+
+		 float maxClosePrice = 0; 
+		 
+		 //Iterate all and calculate maximum
+		 while (values.hasNext()) {
+			 FloatWritable i = values.next();
+			 maxClosePrice = Math.max(maxClosePrice, i.get());
+		 }
+		 
+		 //Write output
+		 output.collect(key, new FloatWritable(maxClosePrice));
+	 }
+ }
+ 
+ 
+///////////////////////
+TEMPERATURE  MAIN
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+
+public class tempanalysis extends Configured implements Tool {
+	
+	public int run(String[] args) throws Exception {
+		if(args.length<2)
+		{
+			System.out.println("Plz Give Input Output Directory Correctly");
+			return -1;
+		}
+		JobConf conf = new JobConf(tempanalysis.class);
+		FileInputFormat.setInputPaths(conf,new Path(args[0]));
+		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+		conf.setMapperClass(tempmapper.class);
+		conf.setReducerClass(tempreducer.class);
+		conf.setMapOutputKeyClass(Text.class);
+		conf.setMapOutputValueClass(FloatWritable.class);
+		conf.setOutputKeyClass(Text.class);
+		conf.setOutputValueClass(FloatWritable.class);
+		JobClient.runJob(conf);
+		return 0;
+		}
+	
+	public static void main(String[] args) throws Exception {
+		int exitcode = ToolRunner.run(new tempanalysis(), args);
+		System.exit(exitcode);
+		}
+}
+
+////////////////////////////////
+TEMP MAPPER
+import java.io.IOException;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.Mapper;
+
+public class tempmapper extends MapReduceBase implements Mapper<LongWritable, Text, Text, FloatWritable>
+{																		                     	
+	@Override
+	public void map(LongWritable key, Text value, 
+			OutputCollector<Text, FloatWritable> output, Reporter r)
+					throws IOException {
+
+		String line = value.toString();
+		String[] items = line.split(",");
+		
+		String country = items[4];
+		if(!items[1].isEmpty() && !items[1].equals(null)) 
+		{
+			Float avgtemperature = Float.parseFloat(items[1]);
+		    output.collect(new Text(country), new FloatWritable(avgtemperature));
+		}
+}
+}
+
+
+
+/////////////////////////////////////
+TEMP REDUCER
+
+ import java.io.IOException;
+ import java.util.Iterator;
+ import org.apache.hadoop.io.FloatWritable;
+ import org.apache.hadoop.io.Text;
+ import org.apache.hadoop.mapred.MapReduceBase;
+ import org.apache.hadoop.mapred.OutputCollector;
+ import org.apache.hadoop.mapred.Reducer;
+import org.apache.hadoop.mapred.Reporter;
+
+ public class tempreducer extends MapReduceBase implements Reducer<Text,FloatWritable,Text,FloatWritable>
+ {
+
+	 @Override
+	 public void reduce(Text key, Iterator<FloatWritable> values, 
+			 OutputCollector<Text, FloatWritable> output, Reporter r)
+			 throws IOException {
+         
+		 float mintemperature=Float.MAX_VALUE; 25.544
+		  //Iterate all and calculate minimum
+		  while (values.hasNext()) {
+			 FloatWritable i = values.next();
+			 mintemperature= Math.min(mintemperature, i.get());24.22
+		 }
+		 
+		 //Write output
+		 output.collect(key, new FloatWritable(mintemperature));
+	 }
+ }
+
+
+
